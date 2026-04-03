@@ -30,7 +30,7 @@ arrangements = load_json(CATALOG_FILE, [
 if "logged_in" not in st.session_state:
     st.session_state.update({"logged_in": False, "user": None, "role": None})
 
-st.set_page_config(page_title="Petals & Blooms Manager", layout="centered", page_icon="🌹")
+st.set_page_config(page_title="Petals & Blooms Manager", layout="centered", page_icon="")
 
 
 if not st.session_state["logged_in"]:
