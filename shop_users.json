@@ -1,0 +1,21 @@
+[
+    {
+        "id": "1",
+        "email": "owner@petals.com",
+        "full_name": "Shop Owner",
+        "password": "admin",
+        "role": "Admin"
+    },
+    {
+        "id": "81790920-5376-4c4a-90de-88225d07634c",
+        "email": "bbarfell@udel.edu",
+        "password": "",
+        "role": "Florist"
+    },
+    {
+        "id": "c9a5d6a6",
+        "email": "btb81604@gmail.com",
+        "password": "bb22041q!",
+        "role": "Florist"
+    }
+]

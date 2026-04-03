@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Red Roses",
+        "price": 45.0,
+        "stock": 50
+    },
+    {
+        "name": "Sunflowers",
+        "price": 15.0,
+        "stock": 30
+    },
+    {
+        "name": "White Lilies",
+        "price": 25.0,
+        "stock": 20
+    },
+    {
+        "name": "Tulip Bouquet",
+        "price": 35.0,
+        "stock": 15
+    }
+]
