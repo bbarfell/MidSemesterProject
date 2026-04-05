@@ -1,10 +1,11 @@
 import streamlit as st
 import json
 import uuid
+import time
 from pathlib import Path
 
 USER_FILE = Path("shop_users.json")
-CATALOG_FILE = Path("arrangements.json")
+CATALOG_FILE = Path("flower_catalog.json")
 
 def load_json(path, default_data):
     if path.exists():
@@ -16,57 +17,66 @@ def save_json(path, data):
     with open(path, "w") as f:
         json.dump(data, f, indent=4)
 
-users = load_json(USER_FILE, [
-    {"id": "1", 
-     "email": "admin@petals.com", 
-     "password": "admin", 
-     "role": "Admin"}
-])
+initial_users = [
+    {"id": "1", "email": "admin@petals.com", "password": "admin", "role": "Admin"},
+    {"id": "2", "email": "florist@petals.com", "password": "staff", "role": "Florist"},
+    {"id": "3", "email": "customer@gmail.com", "password": "user123", "role": "Customer"}
+]
 
-arrangements = load_json(CATALOG_FILE, [
-  
+users = load_json(USER_FILE, initial_users)
+catalog = load_json(CATALOG_FILE, [
+    {"id": "F1", "name": "Midnight Rose", "price": 55.0, "stock": 10},
+    {"id": "F2", "name": "Sunny Daisy", "price": 25.0, "stock": 15}
 ])
 
 if "logged_in" not in st.session_state:
-    st.session_state.update({"logged_in": False, "user": None, "role": None})
+    st.session_state.update({"logged_in": False, "user": None, "role": None, "cart": []})
 
-st.set_page_config(page_title="Petals & Blooms Manager", layout="centered", page_icon="")
+st.set_page_config(page_title="Petals & Blooms", layout="centered", page_icon="")
+
 
 
 if not st.session_state["logged_in"]:
-    st.header(" Petals & Blooms Staff Portal")
-    auth_tab, reg_tab = st.tabs(["Staff Login", "Register New Florist"])
+    st.title("Petals & Blooms Boutique")
+    auth_tab, reg_tab = st.tabs(["Sign In", "Create Account"])
 
     with auth_tab:
         with st.form("login_form"):
-            email_in = st.text_input("Email")
+            email_in = st.text_input("Email").strip().lower()
             pass_in = st.text_input("Password", type="password")
             submit_login = st.form_submit_button("Log In", use_container_width=True)
 
             if submit_login:
-                found_user = next((u for u in users if u["email"].lower() == email_in.lower() and u["password"] == pass_in), None)
+                found_user = next((u for u in users if u["email"].lower() == email_in and u["password"] == pass_in), None)
                 if found_user:
                     st.session_state.update({"logged_in": True, "user": found_user, "role": found_user["role"]})
-                    st.success("Login Successful!")
+                    st.success(f"Welcome back, {found_user['role']}!")
                     time.sleep(1)
                     st.rerun()
                 else:
-                    st.error("Invalid email or password.")
+                    st.error("Account not found or password incorrect.")
 
     with reg_tab:
+        st.subheader("Join our Flower Club")
         with st.form("reg_form"):
-            new_email = st.text_input("New Staff Email")
-            new_pass = st.text_input("New Password", type="password")
-            submit_reg = st.form_submit_button("Create Florist Account")
+            new_email = st.text_input("Email Address")
+            new_pass = st.text_input("Choose Password", type="password")
+            role_choice = st.radio("Account Type", ["Customer", "Florist"], horizontal=True)
+            submit_reg = st.form_submit_button("Register Now")
 
             if submit_reg:
-                if any(u['email'] == new_email for u in users):
-                    st.warning("User already exists.")
+                if any(u['email'] == new_email.lower() for u in users):
+                    st.warning("That email is already registered.")
                 elif new_email and new_pass:
-                    new_user = {"id": str(uuid.uuid4())[:8], "email": new_email, "password": new_pass, "role": "Florist"}
+                    new_user = {
+                        "id": str(uuid.uuid4())[:8],
+                        "email": new_email.lower(),
+                        "password": new_pass,
+                        "role": role_choice
+                    }
                     users.append(new_user)
                     save_json(USER_FILE, users)
-                    st.success("Account created! Please log in on the other tab.")
+                    st.success("Account created! You can now Sign In.")
                 else:
                     st.error("Please fill in all fields.")
     
@@ -74,33 +84,61 @@ if not st.session_state["logged_in"]:
 
 
 with st.sidebar:
-    st.title("Floral Workshop")
-    st.write(f" **{st.session_state['user']['email']}**")
-    st.write(f"Role: {st.session_state['role']}")
-    if st.button("Log Out", type="secondary"):
-        st.session_state.update({"logged_in": False, "user": None, "role": None})
+    st.title("Petals & Blooms")
+    st.write(f"Logged in as: **{st.session_state['user']['email']}**")
+    st.caption(f"Access Level: {st.session_state['role']}")
+    if st.button("Log Out"):
+        st.session_state.update({"logged_in": False, "user": None, "role": None, "cart": []})
         st.rerun()
 
-if st.session_state["role"] in ["Florist", "Admin"]:
-    st.title("Shop Management Dashboard")
+
+# CUSTOMER VIEW 
+if st.session_state["role"] == "Customer":
+    st.title("Shop Our Collection")
+    st.write("Browse our fresh arrangements and place your order.")
     
-    tab1, tab2 = st.tabs(["View Catalog", "Inventory Actions"])
+    cols = st.columns(2)
+    for i, item in enumerate(catalog):
+        with cols[i % 2]:
+            with st.container(border=True):
+                st.subheader(item['name'])
+                st.write(f"Price: **${item['price']:.2f}**")
+                st.write(f"In Stock: {item['stock']}")
+                if st.button(f"Add {item['name']} to Cart", key=f"buy_{item['id']}"):
+                    st.session_state.cart.append(item['name'])
+                    st.toast(f"Added {item['name']} to cart!")
 
-    with tab1:
-        st.subheader("Current Floral Catalog")
-        st.dataframe(arrangements, use_container_width=True)
+    if st.session_state.cart:
+        with st.sidebar:
+            st.divider()
+            st.subheader("Your Cart")
+            for item in st.session_state.cart:
+                st.write(f"• {item}")
+            if st.button("Checkout"):
+                st.balloons()
+                st.success("Order Placed!")
+                st.session_state.cart = []
 
-    with tab2:
-        st.subheader("Add New Design")
-        with st.expander("Click to add new bouquet"):
-            title = st.text_input("Name")
-            price = st.number_input("Price", min_value=0.0)
-            if st.button("Save Design"):
-                new_arr = {"id": str(uuid.uuid4())[:5], "title": title, "price": price, "type": "Bouquet", "description": "New design"}
-                arrangements.append(new_arr)
-                save_json(CATALOG_FILE, arrangements)
-                st.success("Saved!")
-                st.rerun()
+# FLORIST / ADMIN VIEW 
+elif st.session_state["role"] in ["Florist", "Admin"]:
+    st.title("Shop Management")
+    
+    m_tab1, m_tab2 = st.tabs(["Manage Inventory", "Staff Logs"])
+    
+    with m_tab1:
+        st.subheader("Inventory Control")
+        edited_df = st.data_editor(catalog, num_rows="dynamic", key="catalog_editor")
+        if st.button("Save Inventory Changes"):
+            save_json(CATALOG_FILE, edited_df)
+            st.success("Catalog updated!")
+
+    with m_tab2:
+        if st.session_state["role"] == "Admin":
+            st.subheader("User Database")
+            st.table(users)
+        else:
+            st.info("Staff members can view stock, but only Admins see user data.")
+
 
 if st.session_state["role"] == "Admin":
     st.divider()
@@ -130,7 +168,7 @@ if "orders" not in st.session_state:
     st.session_state.orders = []
 
 # Page Configuration
-st.set_page_config(page_title="Petals & Blooms Flower Shop", layout="wide", page_icon="🌸")
+st.set_page_config(page_title="Petals & Blooms Flower Shop", layout="wide", page_icon="")
 st.title(" Petals & Blooms Flower Shop")
 
 tabs = st.tabs(["Create Bouquet", "Inventory View", "Restock Flowers", "Order Tracking"])
