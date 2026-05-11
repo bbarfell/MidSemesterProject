@@ -23,5 +23,17 @@
         "email": "t2@gmail.com",
         "password": "bb22041q!",
         "role": "Customer"
+    },
+    {
+        "id": "3a65504f",
+        "email": "btaybarf@gmail.com",
+        "password": "Bb22041q!",
+        "role": "Customer"
+    },
+    {
+        "id": "4b012a0e",
+        "email": "brookeb@gmail.com",
+        "password": "Bb22041q!",
+        "role": "Florist"
     }
 ]
